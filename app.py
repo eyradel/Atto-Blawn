@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import sqlite3
 from scipy.optimize import linear_sum_assignment
-
+import pandas as pd
 st.markdown(
     '<link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">',
     unsafe_allow_html=True,
@@ -28,7 +28,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.markdown(
     """
-    <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: orange;">
+    <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: #4267B2;">
     <a class="navbar-brand" href="#"  target="_blank">UMaT Security</a>  
     </nav>
 """,
@@ -74,11 +74,13 @@ def run_hungarian_algorithm(cost_matrix):
     return row_ind, col_ind
 
 def main():
-    st.title("Job Allocation System")
+    st.markdown(f"<span class='btn btn-primary btn-block ' style='border-radius:50px'>Job Allocation System</span>",unsafe_allow_html=True)
     st.write("Enter the details of people and options for dates, times, and places.")
     
     names_input = st.text_area("Names (separated by commas)", "John, Alice, Bob, Sarah")
+    
     dates_input = st.text_area("Dates (separated by commas)", "2023-07-20, 2023-07-21, 2023-07-22")
+    
     times_input = st.text_area("Times (separated by commas)", "10:00 AM, 2:00 PM, 6:00 PM")
     places_input = st.text_area("Places (separated by commas)", "Restaurant A, Restaurant B, Park C")
 
@@ -99,7 +101,16 @@ def main():
             date = dates[col_ind[i]]
             time = times[col_ind[i]]
             place = places[col_ind[i]]
-            st.write(f"{person_name} -> Date: {date}, Time: {time}, Place: {place}")
+            # data = pd.DataFrame({
+            #     "Names":person_name,
+            #     "Date":date,
+            #     "Times":time,
+            #     "Place":place
+
+            # }, index=[0,1,2,3]) 
+            # st.write(data)
+
+            st.markdown(f"<span class='btn btn-primary' style='border-radius:50px'>{person_name}</span> -> Date: <span style='border-radius:50px' class='btn btn-primary'>{date}</span>, Time: <span style='border-radius:50px' class='btn btn-primary'>{time}</span>, Place: <span style='border-radius:50px' class='btn btn-primary'>{place}</span>",unsafe_allow_html=True)
 def update_assignment(assignment_id, names_input, dates_input, times_input, places_input):
     # Update the assignment in the database
     cursor.execute('''
@@ -108,33 +119,56 @@ def update_assignment(assignment_id, names_input, dates_input, times_input, plac
         WHERE id=?
     ''', (names_input, dates_input, times_input, places_input, assignment_id))
     conn.commit()
+def delete_assignment(assignment_id):
+    # Delete the assignment from the database
+    cursor.execute('DELETE FROM assignments WHERE id=?', (assignment_id,))
+    conn.commit()
 def view_and_edit():
     # Retrieve the assignments from the database
     cursor.execute('SELECT * FROM assignments')
     assignments = cursor.fetchall()
 
     # Show the assignments in the sidebar
-    st.sidebar.header("View and Edit Assignments")
-    selected_assignment = st.sidebar.selectbox("Select an Assignment", assignments)
+    
+    # selected_assignment = st.sidebar.selectbox("Select an Assignment", assignments)
 
-    if selected_assignment:
-        # Display the selected assignment details in the main area
-        st.subheader("Selected Assignment Details:")
-        st.write(f"Names: {selected_assignment[1]}")
-        st.write(f"Dates: {selected_assignment[2]}")
-        st.write(f"Times: {selected_assignment[3]}")
-        st.write(f"Places: {selected_assignment[4]}")
+    # if selected_assignment:
+    #     # Display the selected assignment details in the main area
+    #     st.subheader("Selected Assignment Details:")
+    #     data = pd.DataFrame({
+    #             "Names":selected_assignment[1],
+    #             "Date":selected_assignment[2],
+    #             "Times":selected_assignment[3],
+    #             "Place":selected_assignment[4]
 
-    st.sidebar.header("Edit Assignment")
+    #         },index=["Row 1","Row 2","Row 3","Row 4"]) 
+    #     st.write(data)
+    #     # st.write(f"Names: {selected_assignment[1]}")
+    #     # st.write(f"Dates: {selected_assignment[2]}")
+    #     # st.write(f"Times: {selected_assignment[3]}")
+    #     # st.write(f"Places: {selected_assignment[4]}")
+    st.sidebar.markdown(f"<span class='btn btn-primary btn-block' style='border-radius:50px;'>View / Edit & Delete Assignments</span>",unsafe_allow_html=True)
+    
+    
     selected_assignment = st.sidebar.selectbox("Select an Assignment to Edit", assignments)
-
+    
     if selected_assignment:
         assignment_id, names, dates, times, places = selected_assignment
         st.subheader("Selected Assignment Details:")
-        st.write(f"Names: {names}")
-        st.write(f"Dates: {dates}")
-        st.write(f"Times: {times}")
-        st.write(f"Places: {places}")
+
+        data = pd.DataFrame({
+                "Names":names,
+                "Date":dates,
+                "Times":times,
+                "Place":places
+
+            },index=["Details"])
+        st.dataframe(data) 
+        # st.write(data)
+        # st.write(f"Names: {names}")
+        # st.write(f"Dates: {dates}")
+        # st.write(f"Times: {times}")
+        # st.write(f"Places: {places}")
 
         with st.expander("Edit Assignment Details", expanded=True):
             names_input = st.text_area("Names (separated by commas)", names)
@@ -146,7 +180,30 @@ def view_and_edit():
             if update_button:
                 update_assignment(assignment_id, names_input, dates_input, times_input, places_input)
                 st.sidebar.success("Assignment updated successfully!")
-                st.experimental_rerun()
+        with st.expander("Delete Assignment", expanded=True):
+            delete_button = st.button("Delete Assignment")
+            if delete_button:
+                delete_assignment(assignment_id)
+                st.sidebar.success("Assignment deleted successfully!")
+def view_all_data():
+    # Retrieve all assignments from the database
+    cursor.execute('SELECT * FROM assignments')
+    all_assignments = cursor.fetchall()
+
+    # Show all assignments in the main area
+    st.subheader("All Assignments:")
+    for assignment in all_assignments:
+        data = pd.DataFrame({
+            "ID":assignment[0],
+            "Names":assignment[1],
+           " Dates":assignment[2],
+           "Times":assignment[3],
+           "Places":assignment[4]
+
+        },index=[""])
+        st.table(data)
+                               
+va = st.sidebar.checkbox("ViewAll")
 
 # if __name__ == "__main__":
 #     with st.container():
@@ -154,10 +211,15 @@ def view_and_edit():
 #         key = st.text_input("Secret Key", type="password")
 #         submit = st.button("Login")
 
-st.markdown(f"<span class='btn btn-primary btn-block ' style='border-radius:50px'>Select</span>",unsafe_allow_html=True)
-check = st.checkbox("View / Edit")
+
+with st.expander("Operation"):
+    
+
+    check = st.checkbox("View / Edit / Delete")
 if check:
     view_and_edit()
+    if va:
+        view_all_data()
 else:    
     main()
 # if submit:
