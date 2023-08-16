@@ -4,6 +4,7 @@ import hashlib
 import sqlite3
 from scipy.optimize import linear_sum_assignment
 import pandas as pd
+import base64
 st.markdown(
     '<link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">',
     unsafe_allow_html=True,
@@ -186,29 +187,44 @@ def view_and_edit():
             if delete_button:
                 delete_assignment(assignment_id)
                 st.sidebar.success("Assignment deleted successfully!")
+def download_link(df, file_name, text):
+    csv = df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
+    href = f'<a href="data:file/csv;base64,{b64}" download="{file_name}">{text}</a>'
+    return href
+
 def view_all_data():
-    # Retrieve all assignments from the database
+    st.title("View All Assignments")
     cursor.execute('SELECT * FROM assignments')
     all_assignments = cursor.fetchall()
-
-    # Show all assignments in the main area
+    # Display all assignments
     st.subheader("All Assignments:")
     for assignment in all_assignments:
         data = pd.DataFrame({
-            "ID":assignment[0],
-            "Names":assignment[1],
-           " Dates":assignment[2],
-           "Times":assignment[3],
-           "Places":assignment[4]
+            "ID": [assignment[0]],
+            "Names": [assignment[1]],
+            "Dates": [assignment[2]],
+            "Times": [assignment[3]],
+            "Places": [assignment[4]]
+        })
 
-        },index=[""])
-    download = st.button("download data")
-    if download:
-        data.to_csv("Schedule.csv")
-    st.table(data)
-                               
-va = st.sidebar.checkbox("ViewAll")
+        st.table(data)
 
+        # Create a DataFrame for download
+        download_df = pd.DataFrame({
+            "ID": assignment[0],
+            "Names": assignment[1],
+            "Dates": assignment[2],
+            "Times": assignment[3],
+            "Places": assignment[4]
+        }, index=[""])
+
+        # Create a unique download button for each assignment
+        download_button_text = f"Download Assignment {assignment[0]} Data"
+        if st.button(download_button_text):
+            st.markdown(download_link(download_df, f'assignment_{assignment[0]}.csv', 'Click here to download the Assignment Data'), unsafe_allow_html=True)
+
+        
 
 
 # if __name__ == "__main__":
@@ -216,6 +232,7 @@ va = st.sidebar.checkbox("ViewAll")
         
 #         key = st.text_input("Secret Key", type="password")
 #         submit = st.button("Login")
+va = st.sidebar.checkbox("ViewAll")
 def skrr():
     with st.expander("Operation"):
         
