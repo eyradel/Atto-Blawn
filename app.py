@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import hashlib
 import sqlite3
 from scipy.optimize import linear_sum_assignment
 import pandas as pd
@@ -201,27 +202,41 @@ def view_all_data():
            "Places":assignment[4]
 
         },index=[""])
-        st.table(data)
+    download = st.button("download data")
+    if download:
+        data.to_csv("Schedule.csv")
+    st.table(data)
                                
 va = st.sidebar.checkbox("ViewAll")
+
+
 
 # if __name__ == "__main__":
 #     with st.container():
         
 #         key = st.text_input("Secret Key", type="password")
 #         submit = st.button("Login")
+def skrr():
+    with st.expander("Operation"):
+        
 
 
-with st.expander("Operation"):
+        check = st.checkbox("View / Edit / Delete")
+    if check:
+        view_and_edit()
+        if va:
+            view_all_data()
+    else:    
+        main()
+secret = st.text_input("Enter Password", type="password")
+code = "1235"
+if (secret== code):
+    skrr()
+    st.markdown("<span class='alert card alert-success'>Access Granted</span>",unsafe_allow_html=True)
+elif (secret is not code):
+    pass
+    #st.markdown("<span class='alert card alert-danger'>Wrong Code</span>",unsafe_allow_html=True)
     
-
-    check = st.checkbox("View / Edit / Delete")
-if check:
-    view_and_edit()
-    if va:
-        view_all_data()
-else:    
-    main()
 # if submit:
 #     if key == "2468":
 #         main()
@@ -232,4 +247,4 @@ else:
 #         st.markdown(
 #             f"<span class='btn btn-danger' style='border-radius:50px'>Wrong</span>",
 #             unsafe_allow_html=True,
-#         )
+
